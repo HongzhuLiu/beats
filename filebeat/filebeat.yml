@@ -19,7 +19,16 @@ filebeat.prospectors:
 
   # Paths that should be crawled and fetched. Glob based paths.
   paths:
-    - /var/log/*.log
+    - /var/log/apache2/access.log
+  fields:
+    type: apache_access
+
+- input_type: log 
+  paths:
+    - /var/log/apache2/error.log
+  fields:
+    type: apache_error
+
     #- c:\programdata\elasticsearch\logs\*
 
   # Exclude lines. A list of regular expressions to match. It drops the lines that are
@@ -77,10 +86,15 @@ filebeat.prospectors:
 # Configure what outputs to use when sending the data collected by the beat.
 # Multiple outputs may be used.
 
+#-------------------------- uploader output ------------------------------
+output.uploader:
+  hosts: ["127.0.0.1:8514"]
+  cid: "c5c62f35-eb03-410a-85b9-2f9fc7a44d77"
+  
 #-------------------------- Elasticsearch output ------------------------------
-output.elasticsearch:
+#output.elasticsearch:
   # Array of hosts to connect to.
-  hosts: ["localhost:9200"]
+  #hosts: ["localhost:9200"]
 
   # Optional protocol and basic auth credentials.
   #protocol: "https"
