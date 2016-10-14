@@ -6,7 +6,6 @@ import (
 	"github.com/elastic/beats/libbeat/common/op"
 	"errors"
 	"github.com/elastic/beats/libbeat/logp"
-	"encoding/json"
 )
 
 func init() {
@@ -46,29 +45,30 @@ func (out *uploaderOutput) PublishEvent(
 	data outputs.Data,
 ) error {
 	event:=data.Event
-	var logType string
+	var logType string=""
 	fieldsMap,ok := event["fields"].(common.MapStr)
 	if ok {
 		logType=common.MapStr(fieldsMap)["type"].(string)
-	}else{
-		logType=""
 	}
-	var hostName string
+	var hostName string=""
 	beatMap,ok := event["beat"].(common.MapStr)
 	if ok {
 		hostName=common.MapStr(beatMap)["hostname"].(string)
-	}else{
-		hostName=""
 	}
-	var timestamp string
+	var timestamp string=""
 	time,ok := event["@timestamp"].(common.Time)
 	if ok {
 		tTIme,_:=common.Time(time).MarshalJSON()
-		timestamp=string(tTIme)
-	}else{
-		timestamp=""
+		if(len(tTIme)>2){
+			timestamp=string(tTIme[1:len(tTIme)-1])
+		}
 	}
-	jsonString, _ := json.Marshal(event)
+	var line string=""
+	message,ok:=event["message"].(string)
+	if(ok){
+		line=message
+	}
+
 	sended := make(chan bool)
 	out.logger.Packets <- Packet{
 		Token:    out.config.Cid,
@@ -76,7 +76,7 @@ func (out *uploaderOutput) PublishEvent(
 		HostName:	hostName,
 		Type:	logType,
 		Time:     timestamp,
-		Message:  string(jsonString),
+		Message:  line,
 		sented:   &sended,
 	}
 	if <-sended {
