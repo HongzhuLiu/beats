@@ -212,6 +212,8 @@
 - key: beats
   title: "beats"
   description: >
+    experimental[]
+
     beats Module
   short_config: false
   fields:
@@ -377,6 +379,242 @@
                       description: >
                         Total number of events published
 
+- key: docker
+  title: "docker"
+  description: >
+    experimental[]
+
+    Docker stats collected from Docker.
+  short_config: false
+  fields:
+    - name: docker
+      type: group
+      description: >
+        docker contains different informations and statistics of docker's containers running
+      fields:
+        # TODO: Currently ports and labels are not added to the template yet
+        - name: container
+          type: group
+          description: >
+            Docker container metrics
+          fields:
+            - name: command
+              type: keyword
+              description: >
+                Executed command in docker container.
+            - name: created
+              type: date
+              description: >
+                Date then the container was created.
+            - name: id
+              type: keyword
+              description: >
+                Unique container id.
+            - name: image
+              type: keyword
+              description: >
+                Name of the image the container was built on.
+            - name: name
+              type: keyword
+              description: >
+                Container name.
+            - name: status
+              type: keyword
+              description: >
+                Container status.
+            - name: size
+              type: group
+              description: >
+                Container size metrics.
+              fields:
+                - name: root_fs
+                  type: long
+                  description: >
+                     Total size of all the files in the container.
+                - name: rw
+                  type: long
+                  description: >
+                     Size of the files which have been created or changed since creation.
+
+        - name: cpu
+          type: group
+          description: >
+            Runtime cpu metrics.
+          fields:
+            - name: usage
+              type: group
+              description: >
+                Cpu usage metrics.
+              fields:
+                - name: kernel_mode
+                  type: scaled_float
+                  description: >
+                    The system kernel consumed by The Docker server.
+                - name: user_mode
+                  type: scaled_float
+                  description: >
+                    The system user mode consumed by The Docker server.
+                - name: total
+                  type: scaled_float
+                  description: >
+                    The total system ressources consumed by The Docker server.
+
+                # TODO: Add per_cpu
+
+        - name: diskio
+          type: group
+          description: >
+            Diskio metrics.
+          fields:
+            - name: reads
+              type: scaled_float
+              description: >
+                Number of reads.
+            - name: writes
+              type: scaled_float
+              description: >
+                Number of writes.
+            - name: total
+              type: scaled_float
+              description: >
+                Reads and writes numbers combined.
+
+        - name: info
+          type: group
+          description: >
+            experimental[]
+
+            info metrics based on https://docs.docker.com/engine/reference/api/docker_remote_api_v1.24/#/display-system-wide-information
+          fields:
+            - name: containers
+              type: group
+              description: >
+                Overall container stats.
+              fields:
+                - name: paused
+                  type: long
+                  description: >
+                    Total number of paused containers.
+                - name: running
+                  type: long
+                  description: >
+                    Total number of running containers.
+                - name: stopped
+                  type: long
+                  description: >
+                    Total number of stopped containers.
+                - name: total
+                  type: long
+                  description: >
+                    Total number of existing containers.
+            - name: id
+              type: keyword
+              description: >
+                Unique docker host identifier.
+
+            - name: images
+              type: long
+              description: >
+                Total number of existing images.
+
+        - name: memory
+          type: group
+          description: >
+            Memory metrics.
+          fields:
+
+            - name: fail.count
+              type: scaled_float
+              description: >
+                Fail counter.
+            - name: limit
+              type: long
+              description: >
+                Memory limit.
+            - name: rss
+              type: group
+              description: >
+                Rss memory stats.
+              fields:
+                - name: total
+                  type: long
+                  description: >
+                    Total memory resident set size.
+                - name: pct
+                  type: scaled_float
+                  description: >
+                    Memory resident set size percentage.
+            - name: usage
+              type: group
+              description: >
+                Usage memory stats.
+              fields:
+                - name: max
+                  type: long
+                  description: >
+                    Max memory usage.
+                - name: pct
+                  type: scaled_float
+                  description: >
+                    Memory usage percentage.
+                - name: total
+                  type: long
+                  description: >
+                    Total memory usage.
+
+        - name: network
+          type: group
+          description: >
+            Netowrk metrics.
+          fields:
+
+            - name: interface
+              type: keyword
+              description: >
+                Network interface name.
+            - name: in
+              type: group
+              description: >
+                Incoming network stats.
+              fields:
+                - name: bytes
+                  type: long
+                  description: >
+                    Total number of incoming bytes.
+                - name: dropped
+                  type: scaled_float
+                  description: >
+                    Total number of dropped incoming packets.
+                - name: errors
+                  type: long
+                  description: >
+                    Total errors on incoming packets.
+                - name: packets
+                  type: long
+                  description: >
+                    Total number of incoming packets.
+            - name: out
+              type: group
+              description: >
+                Outgoing network stats.
+              fields:
+                - name: bytes
+                  type: long
+                  description: >
+                    Total number of outgoing bytes.
+                - name: dropped
+                  type: scaled_float
+                  description: >
+                    Total number of dropped outgoing packets.
+                - name: errors
+                  type: long
+                  description: >
+                    Total errors on outgoing packets.
+                - name: packets
+                  type: long
+                  description: >
+                    Total number of outgoing packets.
+
 - key: haproxy
   title: "haproxy"
   description: >
@@ -461,7 +699,7 @@
                     - name: value
                       type: integer
                       description: >
-          
+
                     - name: limit
                       type: integer
                       description: >
@@ -469,12 +707,12 @@
             - name: curr
               type: group
               description: >
-      
+
               fields:
                 - name: conns
                   type: integer
                   description: >
-            
+
                 - name: ssl_conns
                   type: integer
                   description: >
@@ -482,12 +720,12 @@
             - name: cum
               type: group
               description: >
-      
+
               fields:
                 - name: conns
                   type: integer
                   description: >
-            
+
                 - name: req
                   type: integer
                   description: >
@@ -499,63 +737,62 @@
 
             - name: max
               type: group
-              description: >
+              description: Maximum values reported by HAProxy.
 
               fields:
                 - name: hard_conn
                   type: integer
-                  description: >
+                  description: HardMaxconn
+
+                - name: ssl.conns
+                  type: integer
+                  description: MaxSslConns
+
+                - name: ssl.rate
+                  type: integer
+                  description: MaxSslRate
 
                 - name: sock
                   type: integer
-                  description: >     
-      
-                - name: conn
-                  type: integer
-                  description: >
+                  description: Maxsock
 
-                - name: ssl_conns
+                - name: conn.value
                   type: integer
-                  description: >
+                  description: Maxconn
+
+                - name: conn.rate
+                  type: integer
+                  description: MaxConnRate
+
+                - name: sess_rate
+                  type: integer
+                  description: MaxSessRate
 
                 - name: pipes
                   type: integer
-                  description: >
-
-                - name: conn_rate
-                  type: integer
-                  description: >
-        
-                - name: sess_rate
-                  type: integer
-                  description: >
-
-                - name: ssl_rate
-                  type: integer
-                  description: >
+                  description: Maxpipes
 
                 - name: zlib_mem_usage
                   type: integer
-                  description: >
+                  description: MaxZlibMemUsage
 
             - name: pipes
               type: group
               description: >
-      
+
               fields:
                 - name: used
                   type: integer
                   description: >
-            
+
                 - name: free
                   type: integer
                   description: >
 
-
             - name: sess
               type: group
               description: >
-      
+
               fields:
                 - name: rate
                   type: group
@@ -573,12 +810,12 @@
             - name: ssl
               type: group
               description: >
-      
+
               fields:
                 - name: rate
                   type: group
                   description: >
-          
+
                   fields:
                     - name: value
                       type: integer
@@ -591,7 +828,7 @@
                 - name: frontend
                   type: group
                   description: >
-          
+
                   fields:
                     - name: key_rate
                       type: integer
@@ -608,7 +845,7 @@
                 - name: backend
                   type: group
                   description: >
-          
+
                   fields:
                     - name: key_rate
                       type: integer
@@ -618,11 +855,11 @@
                       type: integer
                       description: >
 
-                - name: ssl_cached_lookups
+                - name: cached_lookups
                   type: integer
                   description: >
 
-                - name: ssl_cache_misses
+                - name: cache_misses
                   type: integer
                   description: >
 
@@ -1441,6 +1678,31 @@
                   description: >
                     The number of bytes sent to all clients.
 
+            - name: threads
+              type: group
+              description: >
+                Threads stats.
+              fields:
+                - name: cached
+                  type: long
+                  description: >
+                    The number of cached threads.
+
+                - name: created
+                  type: long
+                  description: >
+                    The number of created threads.
+
+                - name: connected
+                  type: long
+                  description: >
+                    The number of connected threads.
+
+                - name: running
+                  type: long
+                  description: >
+                    The number of running threads.
+
             - name: connections
               type: long
               description: >
@@ -1921,57 +2183,65 @@
                   type: boolean
                   description:
 
-                - name: rdb.last_save.changes_since
-                  type: long
+                - name: rdb
+                  type: group
                   description:
+                  fields:
+                    - name: last_save.changes_since
+                      type: long
+                      description:
 
-                - name: rdb.bgsave.in_progress
-                  type: boolean
-                  description:
+                    - name: bgsave.in_progress
+                      type: boolean
+                      description:
 
-                - name: rdb.last_save.time
-                  type: long
-                  description:
+                    - name: last_save.time
+                      type: long
+                      description:
 
-                - name: rdb.bgsave.last_status
-                  type: keyword
-                  description:
+                    - name: bgsave.last_status
+                      type: keyword
+                      description:
 
-                - name: rdb.bgsave.last_time.sec
-                  type: long
-                  description:
+                    - name: bgsave.last_time.sec
+                      type: long
+                      description:
 
-                - name: rdb.bgsave.current_time.sec
-                  type: long
-                  description:
+                    - name: bgsave.current_time.sec
+                      type: long
+                      description:
 
-                - name: aof.enabled
-                  type: boolean
+                - name: aof
+                  type: group
                   description:
+                  fields:
+                    - name: enabled
+                      type: boolean
+                      description:
 
-                - name: aof.rewrite.in_progress
-                  type: boolean
-                  description:
+                    - name: rewrite.in_progress
+                      type: boolean
+                      description:
 
-                - name: aof.rewrite.scheduled
-                  type: boolean
-                  description:
+                    - name: rewrite.scheduled
+                      type: boolean
+                      description:
 
-                - name: aof.rewrite.last_time.sec
-                  type: long
-                  description:
+                    - name: rewrite.last_time.sec
+                      type: long
+                      description:
 
-                - name: aof.rewrite.current_time.sec
-                  type: long
-                  description:
+                    - name: rewrite.current_time.sec
+                      type: long
+                      description:
 
-                - name: aof.bgrewrite.last_status
-                  type: keyword
-                  description:
+                    - name: bgrewrite.last_status
+                      type: keyword
+                      description:
 
-                - name: aof.write.last_status
-                  type: keyword
-                  description:
+                    - name: write.last_status
+                      type: keyword
+                      description:
 
             - name: replication
               type: group
@@ -2614,20 +2884,22 @@
 
                 - name: used.bytes
                   type: long
+                  format: bytes
                   description: >
                     Actual used memory in bytes. It represents the difference between the total and the available memory. The
                     available memory depends on the OS. For more details, please check `system.actual.free`.
  
                 - name: free
                   type: long
+                  format: bytes
                   description: >
                     Actual free memory in bytes. It is calculated based on the OS. On Linux it consists of the free memory
-                    plus caches and buffers. On OSX it is a sum of free memory and the inactive memory. On Windows, it is the 
-                    amount of unreserved and uncommitted memory currently in the user-mode portion of the virtual address space
-                    of the calling process.
+                    plus caches and buffers. On OSX it is a sum of free memory and the inactive memory. On Windows, it is equal
+                    to `system.memory.free`.
 
                 - name: used.pct
                   type: scaled_float
+                  format: percent
                   description: >
                     The percentage of actual used memory.
 
@@ -3183,14 +3455,14 @@
                         Path to the cgroup relative to the cgroup subsystems mountpoint.
 
                     - name: total.bytes
-                      type: keyword
+                      type: long
                       format: bytes
                       description: >
                         Total number of bytes transferred to and from all block devices
                         by processes in the cgroup.
 
                     - name: total.ios
-                      type: keyword
+                      type: long
                       description: >
                         Total number of I/O operations performed on all devices
                         by processes in the cgroup as seen by the throttling policy.

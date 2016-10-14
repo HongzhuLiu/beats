@@ -5,6 +5,7 @@ import platform
 import time
 import shutil
 import json
+import stat
 from nose.plugins.skip import Skip, SkipTest
 
 
@@ -760,7 +761,7 @@ class Test(BaseTest):
 
         # Wait until registry file is created
         self.wait_until(
-            lambda: self.log_contains("Registry file updated"),
+            lambda: self.log_contains_count("Registry file updated") > 1,
             max_timeout=15)
 
         data = self.get_registry()
@@ -828,7 +829,7 @@ class Test(BaseTest):
 
         # Wait until registry file is created
         self.wait_until(
-            lambda: self.log_contains("Registry file updated"),
+            lambda: self.log_contains_count("Registry file updated") > 1,
             max_timeout=15)
 
         data = self.get_registry()
@@ -861,3 +862,157 @@ class Test(BaseTest):
             assert data[0]["offset"] == len("make sure registry is written\n" + "2\n") + 2
         else:
             assert data[0]["offset"] == len("make sure registry is written\n" + "2\n")
+
+    def test_clean_removed_with_clean_inactive(self):
+        """
+        Checks that files which were removed, the state is removed
+        """
+        self.render_config_template(
+            path=os.path.abspath(self.working_dir) + "/log/input*",
+            scan_frequency="0.1s",
+            clean_removed=True,
+            clean_inactive="20s",
+            ignore_older="15s",
+            close_removed=True
+        )
+
+        os.mkdir(self.working_dir + "/log/")
+        testfile1 = self.working_dir + "/log/input1"
+        testfile2 = self.working_dir + "/log/input2"
+
+        with open(testfile1, 'w') as f:
+            f.write("file to be removed\n")
+
+        with open(testfile2, 'w') as f:
+            f.write("2\n")
+
+        filebeat = self.start_beat()
+
+        self.wait_until(
+            lambda: self.output_has(lines=2),
+            max_timeout=10)
+
+        # Wait until registry file is created
+        self.wait_until(
+            lambda: self.log_contains_count("Registry file updated") > 1,
+            max_timeout=15)
+
+        data = self.get_registry()
+        assert len(data) == 2
+
+        os.remove(testfile1)
+
+        # Wait until states are removed from prospectors
+        self.wait_until(
+            lambda: self.log_contains(
+                "Remove state for file as file removed"),
+            max_timeout=15)
+
+        # Add one more line to make sure registry is written
+        with open(testfile2, 'a') as f:
+            f.write("make sure registry is written\n")
+
+        self.wait_until(
+            lambda: self.output_has(lines=3),
+            max_timeout=10)
+
+        time.sleep(3)
+
+        filebeat.check_kill_and_wait()
+
+        # Check that the first to files were removed from the registry
+        data = self.get_registry()
+        assert len(data) == 1
+
+        # Make sure the last file in the registry is the correct one and has the correct offset
+        if os.name == "nt":
+            assert data[0]["offset"] == len("make sure registry is written\n" + "2\n") + 2
+        else:
+            assert data[0]["offset"] == len("make sure registry is written\n" + "2\n")
+
+    def test_directory_failure(self):
+        """
+        Test that filebeat does not start if a directory is set as registry file
+        """
+
+        self.render_config_template(
+            path=os.path.abspath(self.working_dir) + "/log/*",
+            registryFile="registrar",
+        )
+        os.mkdir(self.working_dir + "/log/")
+        os.mkdir(self.working_dir + "/registrar/")
+
+        testfile = self.working_dir + "/log/test.log"
+        with open(testfile, 'w') as file:
+            file.write("Hello World\n")
+
+        filebeat = self.start_beat()
+
+        # Make sure states written appears one more time
+        self.wait_until(
+            lambda: self.log_contains("CRIT Exiting: Registry file path must be a file"),
+            max_timeout=10)
+
+        filebeat.check_kill_and_wait(exit_code=1)
+
+    def test_symlink_failure(self):
+        """
+        Test that filebeat does not start if a symlink is set as registry file
+        """
+        self.render_config_template(
+            path=os.path.abspath(self.working_dir) + "/log/*",
+            registryFile="registry_symlink",
+        )
+        os.mkdir(self.working_dir + "/log/")
+
+        testfile = self.working_dir + "/log/test.log"
+        with open(testfile, 'w') as file:
+            file.write("Hello World\n")
+
+        registryfile = self.working_dir + "/registry"
+        with open(registryfile, 'w') as file:
+            file.write("[]")
+
+        if os.name == "nt":
+            import win32file
+            win32file.CreateSymbolicLink(self.working_dir + "/registry_symlink", registryfile, 0)
+        else:
+            os.symlink(registryfile, self.working_dir + "/registry_symlink")
+
+        filebeat = self.start_beat()
+
+        # Make sure states written appears one more time
+        self.wait_until(
+            lambda: self.log_contains("CRIT Exiting: Registry file path is not a regular file"),
+            max_timeout=10)
+
+        filebeat.check_kill_and_wait(exit_code=1)
+
+    def test_invalid_state(self):
+        """
+        Test that filebeat fails starting if invalid state in registry
+        """
+
+        self.render_config_template(
+            path=os.path.abspath(self.working_dir) + "/log/*",
+        )
+        os.mkdir(self.working_dir + "/log/")
+        registry_file = self.working_dir + "/registry"
+
+        testfile = self.working_dir + "/log/test.log"
+        with open(testfile, 'w') as file:
+            file.write("Hello World\n")
+
+        registry_file = self.working_dir + "/registry"
+        with open(registry_file, 'w') as file:
+            # Write invalid state
+            file.write("Hello World")
+
+        filebeat = self.start_beat()
+
+        # Make sure states written appears one more time
+        self.wait_until(
+            lambda: self.log_contains("CRIT Exiting: Could not start registrar: Error loading state"),
+            max_timeout=10)
+
+        filebeat.check_kill_and_wait(exit_code=1)
