@@ -13,14 +13,14 @@ type DockerStat struct {
 	Stats     docker.Stats
 }
 
-// TOOD: These should not be global as otherwise only one client and socket can be used -> max 1 module to monitor
+// TODO: These should not be global as otherwise only one client and socket can be used -> max 1 module to monitor
 var socket string
 
 func NewDockerClient(config *Config) (*docker.Client, error) {
 	socket = config.Socket
 
 	var err error
-	var client *docker.Client = nil
+	var client *docker.Client
 
 	if config.Tls.Enabled == true {
 		client, err = docker.NewTLSClient(
@@ -50,6 +50,9 @@ func FetchStats(client *docker.Client) ([]DockerStat, error) {
 
 	containersList := []DockerStat{}
 	for _, container := range containers {
+		// This is currently very inefficient as docker calculates the average for each request,
+		// means each request will take at least 2s: https://github.com/docker/docker/blob/master/cli/command/container/stats_helpers.go#L148
+		// Getting all stats at once is implemented here: https://github.com/docker/docker/pull/25361
 		containersList = append(containersList, exportContainerStats(client, &container))
 	}
 

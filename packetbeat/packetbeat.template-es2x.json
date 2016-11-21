@@ -334,6 +334,9 @@
                       "index": "not_analyzed",
                       "type": "string"
                     },
+                    "port": {
+                      "type": "long"
+                    },
                     "schema_change": {
                       "properties": {
                         "args": {
@@ -570,6 +573,13 @@
                   "type": "string"
                 }
               }
+            }
+          }
+        },
+        "client_geoip": {
+          "properties": {
+            "location": {
+              "type": "geo_point"
             }
           }
         },

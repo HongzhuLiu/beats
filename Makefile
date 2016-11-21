@@ -36,6 +36,7 @@ coverage-report:
 
 .PHONY: update
 update:
+	$(MAKE) -C libbeat collect
 	$(foreach var,$(BEATS),$(MAKE) -C $(var) update || exit 1;)
 
 .PHONY: clean
@@ -55,7 +56,6 @@ check:
 	$(foreach var,$(PROJECTS),$(MAKE) -C $(var) check || exit 1;)
 	# Validate that all updates were commited
 	$(MAKE) update
-	$(MAKE) -C metricbeat collect
 	git update-index --refresh
 	git diff-index --exit-code HEAD --
 
@@ -71,7 +71,7 @@ simplify:
 .PHONY: beats-dashboards
 beats-dashboards:
 	mkdir -p build/dashboards
-	$(foreach var,$(BEATS),cp -r $(var)/etc/kibana/ build/dashboards/$(var)  || exit 1;)
+	$(foreach var,$(BEATS),cp -r $(var)/_meta/kibana/ build/dashboards/$(var)  || exit 1;)
 
 # Builds the documents for each beat
 .PHONY: docs
@@ -79,7 +79,7 @@ docs:
 	sh libbeat/scripts/build_docs.sh ${PROJECTS}
 
 .PHONY: package
-package: beats-dashboards
+package: update beats-dashboards
 	$(foreach var,$(BEATS),SNAPSHOT=$(SNAPSHOT) $(MAKE) -C $(var) package || exit 1;)
 
 	# build the dashboards package
