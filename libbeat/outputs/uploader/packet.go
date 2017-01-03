@@ -24,7 +24,8 @@ func (p Packet) cleanMessage() string {
 }
 
 func (p Packet) Generate() string {
-	msg := fmt.Sprintf("[token:%s time:%s host:%s ip:%s type:%s] %s",p.Token,p.Time, p.HostName,p.Ip,p.Type, p.cleanMessage())
+	//msg := fmt.Sprintf("[token:%s time:%s host:%s ip:%s type:%s] %s",p.Token,p.Time, p.HostName,p.Ip,p.Type, p.cleanMessage())
+	msg:= p.Message
 	logp.Debug("log message:  %s", msg)
 	return msg
 }
