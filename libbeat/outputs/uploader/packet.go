@@ -1,7 +1,6 @@
 package uploader
 
 import (
-	"fmt"
 	"github.com/elastic/beats/libbeat/logp"
 	"strings"
 )
