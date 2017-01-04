@@ -68,12 +68,17 @@ func (out *uploaderOutput) PublishEvent(
 	if(ok){
 		line=message
 	}
-
+	var sourceStr string=""
+	source,ok:=event["source"].(string)
+	if(ok){
+		sourceStr=source
+	}
 	sended := make(chan bool)
 	out.logger.Packets <- Packet{
 		Token:    out.config.Cid,
 		Ip:       out.config.HostIp,
 		HostName:	hostName,
+		Source:	sourceStr,
 		Type:	logType,
 		Time:     timestamp,
 		Message:  line,

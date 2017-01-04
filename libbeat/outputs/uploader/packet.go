@@ -3,6 +3,7 @@ package uploader
 import (
 	"github.com/elastic/beats/libbeat/logp"
 	"strings"
+	"fmt"
 )
 
 type Packet struct {
@@ -10,6 +11,7 @@ type Packet struct {
 	Time	string
 	HostName string
 	Ip       string
+	Source	string
 	Type	string
 	Message  string
 	sented   *(chan bool)
@@ -23,8 +25,8 @@ func (p Packet) cleanMessage() string {
 }
 
 func (p Packet) Generate() string {
-	//msg := fmt.Sprintf("[token:%s time:%s host:%s ip:%s type:%s] %s",p.Token,p.Time, p.HostName,p.Ip,p.Type, p.cleanMessage())
-	msg:= p.Message
+	msg := fmt.Sprintf("[token:%s time:%s host:%s ip:%s type:%s source:%s] %s",p.Token,p.Time, p.HostName,p.Ip,p.Type,p.Source,p.cleanMessage())
+	//msg:= p.Message
 	logp.Debug("log message:  %s", msg)
 	return msg
 }
